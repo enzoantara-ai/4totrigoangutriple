@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reto del Ángulo Triple</title>
+<style>
+  :root{
+    --bg:#0f1b2d; --card:#ffffff; --ink:#14213d; --muted:#5b6b82;
+    --accent:#2563eb; --ok:#16a34a; --bad:#dc2626; --gold:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:linear-gradient(160deg,#0f1b2d,#1e3a5f); color:var(--ink);
+    display:flex; align-items:center; justify-content:center; padding:16px;
+  }
+  .card{
+    width:100%; max-width:680px; background:var(--card); border-radius:20px;
+    padding:28px 24px; box-shadow:0 20px 50px rgba(0,0,0,.35);
+  }
+  h1{margin:0 0 6px; font-size:1.7rem; color:var(--accent)}
+  .sub{color:var(--muted); margin:0 0 18px}
+  .formulas{background:#eff6ff; border-left:5px solid var(--accent); border-radius:10px; padding:12px 16px; margin:14px 0 20px; line-height:1.9; font-size:1.05rem}
+  button{
+    font:inherit; cursor:pointer; border:none; border-radius:12px; padding:12px 20px;
+    background:var(--accent); color:#fff; font-weight:600; transition:transform .1s, filter .15s;
+  }
+  button:hover{filter:brightness(1.08)} button:active{transform:scale(.98)}
+  .top{display:flex; justify-content:space-between; align-items:center; font-weight:600; color:var(--muted); margin-bottom:10px}
+  .bar{height:8px; background:#e5e7eb; border-radius:99px; overflow:hidden; margin-bottom:20px}
+  .bar>div{height:100%; background:var(--accent); width:0; transition:width .3s}
+  .q{font-size:1.25rem; font-weight:700; margin:0 0 16px; line-height:1.45}
+  .opts{display:grid; gap:10px}
+  .opt{
+    text-align:left; background:#f3f4f6; color:var(--ink); border:2px solid transparent;
+    font-size:1.1rem; padding:14px 16px;
+  }
+  .opt:hover{background:#e0e7ff}
+  .opt.ok{background:#dcfce7; border-color:var(--ok)}
+  .opt.bad{background:#fee2e2; border-color:var(--bad)}
+  .opt:disabled{cursor:default; filter:none}
+  .hintbtn{background:transparent; color:var(--accent); padding:6px 0; font-size:.95rem; text-decoration:underline}
+  .hint{display:none; background:#fffbeb; border-left:5px solid var(--gold); padding:10px 14px; border-radius:8px; margin:6px 0 14px}
+  .fb{display:none; margin-top:16px; padding:14px 16px; border-radius:12px; line-height:1.55}
+  .fb.ok{background:#f0fdf4; border:2px solid var(--ok)}
+  .fb.bad{background:#fef2f2; border:2px solid var(--bad)}
+  .next{margin-top:14px; width:100%}
+  .big{font-size:3.2rem; font-weight:800; margin:6px 0}
+  .center{text-align:center}
+  .hidden{display:none}
+  .review{text-align:left; margin-top:16px; font-size:.95rem}
+  .review div{padding:6px 0; border-bottom:1px solid #e5e7eb}
+</style>
+</head>
+<body>
+<main class="card">
+
+  <section id="start">
+    <h1>⚡ Reto del Ángulo Triple</h1>
+    <p class="sub">10 preguntas · puedes jugar las veces que quieras</p>
+    <div class="formulas">
+      <b>Recuerda:</b><br>
+      sen3θ = 3senθ − 4sen³θ<br>
+      cos3θ = 4cos³θ − 3cosθ<br>
+      tan3θ = (3tanθ − tan³θ) / (1 − 3tan²θ)<br>
+      4sen³θ = 3senθ − sen3θ &nbsp;·&nbsp; 4cos³θ = 3cosθ + cos3θ
+    </div>
+    <p>Si te equivocas, verás la explicación. ¡Cada vez que juegues, las preguntas y alternativas cambian de orden!</p>
+    <button id="startBtn" style="width:100%">Empezar</button>
+  </section>
+
+  <section id="game" class="hidden">
+    <div class="top"><span id="progress">Pregunta 1 de 10</span><span id="score">Aciertos: 0</span></div>
+    <div class="bar"><div id="barfill"></div></div>
+    <p class="q" id="question"></p>
+    <button class="hintbtn" id="hintBtn">💡 Ver pista</button>
+    <div class="hint" id="hint"></div>
+    <div class="opts" id="opts"></div>
+    <div class="fb" id="fb"></div>
+    <button class="next hidden" id="nextBtn">Siguiente →</button>
+  </section>
+
+  <section id="end" class="hidden center">
+    <h1>¡Reto terminado!</h1>
+    <div class="big" id="finalScore"></div>
+    <p id="msg"></p>
+    <div class="review" id="review"></div>
+    <button id="againBtn" style="width:100%; margin-top:20px">🔄 Jugar otra vez</button>
+  </section>
+
+</main>
+
+<script>
+// Cada pregunta: q = enunciado, o = alternativas (la primera es la correcta), h = pista, e = explicación
+const QUESTIONS = [
+  { q: "¿Cuál es la identidad correcta para sen3θ?",
+    o: ["3senθ − 4sen³θ", "3senθ + 4sen³θ", "4sen³θ − 3senθ", "3senθ"],
+    h: "Se obtiene de sen(θ + 2θ). Si θ = 30°, el resultado debe ser sen90° = 1.",
+    e: "sen3θ = sen(θ+2θ) = senθcos2θ + cosθsen2θ, que se reduce a 3senθ − 4sen³θ. Con θ = 30°: 3(1/2) − 4(1/8) = 1 ✔." },
+  { q: "¿Cuál es la identidad correcta para cos3θ?",
+    o: ["4cos³θ − 3cosθ", "3cosθ − 4cos³θ", "4cos³θ + 3cosθ", "3cosθ"],
+    h: "Prueba con θ = 0°: cos0° = 1 y cos0° = 1.",
+    e: "cos3θ = 4cos³θ − 3cosθ. Con θ = 0°: 4 − 3 = 1 ✔ (la otra opción daría −1)." },
+  { q: "Si senx = 1/2, ¿cuánto vale sen3x?",
+    o: ["1", "3/2", "1/2", "0"],
+    h: "Reemplaza en 3senx − 4sen³x.",
+    e: "sen3x = 3(1/2) − 4(1/2)³ = 3/2 − 1/2 = 1. Nota: 3senx = 3/2 sería imposible, porque el seno nunca pasa de 1." },
+  { q: "Si cosx = 1/2, ¿cuánto vale cos3x?",
+    o: ["−1", "1", "0", "−1/2"],
+    h: "Usa cos3x = 4cos³x − 3cosx.",
+    e: "cos3x = 4(1/2)³ − 3(1/2) = 1/2 − 3/2 = −1. (Si x = 60°, cos180° = −1 ✔)." },
+  { q: "La identidad de degradación para 4sen³θ es:",
+    o: ["3senθ − sen3θ", "3senθ + sen3θ", "sen3θ − 3senθ", "3sen3θ − senθ"],
+    h: "Es la identidad del seno triple con los términos despejados.",
+    e: "De sen3θ = 3senθ − 4sen³θ se despeja 4sen³θ = 3senθ − sen3θ." },
+  { q: "Simplifica: sen3x / senx",
+    o: ["2cos2x + 1", "2cos2x − 1", "3 − 4senx", "4cos²x − 3"],
+    h: "Factoriza senx en 3senx − 4sen³x y usa sen²x = (1 − cos2x)/2.",
+    e: "sen3x = senx(3 − 4sen²x) = senx(3 − 2(1 − cos2x)) = senx(2cos2x + 1)." },
+  { q: "Simplifica: (cos3x + 3cosx) / cos³x",
+    o: ["4", "3", "2", "1"],
+    h: "Usa 4cos³x = 3cosx + cos3x.",
+    e: "El numerador es 3cosx + cos3x = 4cos³x. Entonces 4cos³x / cos³x = 4." },
+  { q: "Si senx = 1/√3, ¿cuánto vale √3·sen3x?",
+    o: ["5/3", "5/9", "1", "3/5"],
+    h: "sen3x = 3senx − 4sen³x. Recuerda que (1/√3)³ = 1/(3√3).",
+    e: "sen3x = 3/√3 − 4/(3√3) = √3 − 4√3/9 = 5√3/9. Multiplicando por √3: 5·3/9 = 5/3." },
+  { q: "Si tanθ = 1 (θ = 45°), ¿cuánto vale tan3θ?",
+    o: ["−1", "1", "2", "−2"],
+    h: "tan3θ = (3tanθ − tan³θ) / (1 − 3tan²θ).",
+    e: "tan3θ = (3 − 1)/(1 − 3) = 2/(−2) = −1. Comprobación: tan135° = −1 ✔." },
+  { q: "Calcula: (6sen20° − √3) / sen³20°",
+    o: ["8", "4", "6", "16"],
+    h: "Usa 4sen³θ = 3senθ − sen3θ con θ = 20°. Recuerda sen60° = √3/2.",
+    e: "4sen³20° = 3sen20° − sen60° = (6sen20° − √3)/2, así que sen³20° = (6sen20° − √3)/8. Entonces el cociente vale 8." }
+];
+
+const $ = id => document.getElementById(id);
+let order, idx, score, answers;
+
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function show(id){ ["start","game","end"].forEach(s => $(s).classList.toggle("hidden", s!==id)); }
+
+function start(){
+  order = shuffle(QUESTIONS.map((_,i)=>i));
+  idx = 0; score = 0; answers = [];
+  show("game"); load();
+}
+
+function load(){
+  const Q = QUESTIONS[order[idx]];
+  $("progress").textContent = "Pregunta " + (idx+1) + " de " + QUESTIONS.length;
+  $("score").textContent = "Aciertos: " + score;
+  $("barfill").style.width = (idx / QUESTIONS.length * 100) + "%";
+  $("question").textContent = Q.q;
+  $("hint").style.display = "none"; $("hint").textContent = Q.h;
+  $("hintBtn").classList.remove("hidden");
+  const fb = $("fb"); fb.style.display = "none"; fb.className = "fb";
+  $("nextBtn").classList.add("hidden");
+  const box = $("opts"); box.innerHTML = "";
+  shuffle(Q.o.map((t,i)=>({t, ok:i===0}))).forEach(op => {
+    const b = document.createElement("button");
+    b.className = "opt"; b.textContent = op.t;
+    b.onclick = () => choose(b, op.ok, Q);
+    b.dataset.ok = op.ok ? "1" : "0";
+    box.appendChild(b);
+  });
+}
+
+function choose(btn, ok, Q){
+  document.querySelectorAll(".opt").forEach(b => {
+    b.disabled = true;
+    if (b.dataset.ok === "1") b.classList.add("ok");
+  });
+  const fb = $("fb");
+  if (ok){
+    score++;
+    fb.className = "fb ok"; fb.innerHTML = "<b>¡Correcto! 🎉</b><br>" + Q.e;
+  } else {
+    btn.classList.add("bad");
+    fb.className = "fb bad"; fb.innerHTML = "<b>Casi. Revisa la explicación:</b><br>" + Q.e;
+  }
+  fb.style.display = "block";
+  answers.push({q:Q.q, ok});
+  $("score").textContent = "Aciertos: " + score;
+  $("hintBtn").classList.add("hidden"); $("hint").style.display = "none";
+  const nb = $("nextBtn"); nb.classList.remove("hidden");
+  nb.textContent = (idx === QUESTIONS.length-1) ? "Ver resultado" : "Siguiente →";
+}
+
+function next(){
+  idx++;
+  if (idx >= QUESTIONS.length) finish(); else load();
+}
+
+function finish(){
+  $("barfill").style.width = "100%";
+  show("end");
+  $("finalScore").textContent = score + " / " + QUESTIONS.length;
+  let m = "¡Sigue practicando! Revisa las explicaciones y vuelve a intentarlo.";
+  if (score === 10) m = "🏆 ¡Perfecto! Dominas el ángulo triple.";
+  else if (score >= 8) m = "🌟 ¡Muy bien! Estás casi listo para la práctica de la ficha.";
+  else if (score >= 6) m = "👍 Vas bien. Repite el juego para afianzar las identidades.";
+  $("msg").textContent = m;
+  $("review").innerHTML = answers.map((a,i)=>"<div>" + (a.ok ? "✅ " : "❌ ") + (i+1) + ". " + a.q + "</div>").join("");
+}
+
+$("startBtn").onclick = start;
+$("againBtn").onclick = start;
+$("nextBtn").onclick = next;
+$("hintBtn").onclick = () => { $("hint").style.display = "block"; };
+</script>
+</body>
+</html>
